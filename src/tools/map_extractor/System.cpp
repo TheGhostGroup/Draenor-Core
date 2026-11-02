@@ -17,6 +17,7 @@
 
 #ifdef _WIN32
 #include "direct.h"
+#include <windows.h>
 #else
 #include <sys/stat.h>
 #include <unistd.h>
@@ -133,16 +134,26 @@ char const* Locales[LOCALES_COUNT] =
 
 void CreateDir(std::string const& path)
 {
-    if (chdir(path.c_str()) == 0)
-    {
-            chdir("../");
-            return;
-    }
+    // Same idea as dio85/TCWoD (boost::filesystem::create_directory): create one
+    // directory level without chdir(). The old chdir()/chdir("..") path broke nested
+    // dirs like ./dbc/enUS — cwd ended in ./dbc and fopen("./dbc/enUS/...") failed.
+    // Windows _mkdir also rejects a trailing slash.
+    std::string dir = path;
+    while (!dir.empty() && (dir.back() == '/' || dir.back() == '\\'))
+        dir.pop_back();
+    if (dir.empty())
+        return;
 
 #ifdef _WIN32
-    _mkdir(path.c_str());
+    DWORD const attrs = GetFileAttributesA(dir.c_str());
+    if (attrs != INVALID_FILE_ATTRIBUTES && (attrs & FILE_ATTRIBUTE_DIRECTORY))
+        return;
+    _mkdir(dir.c_str());
 #else
-    mkdir(path.c_str(), S_IRWXU | S_IRWXG | S_IRWXO); // 0777
+    struct stat st;
+    if (stat(dir.c_str(), &st) == 0 && S_ISDIR(st.st_mode))
+        return;
+    mkdir(dir.c_str(), S_IRWXU | S_IRWXG | S_IRWXO); // 0777
 #endif
 }
 
@@ -163,11 +174,11 @@ void Usage(char const* prg)
     printf(
         "Usage:\n"\
         "%s -[var] [value]\n"\
-        "-i set input path (max %d characters)\n"\
+        "-i set input path to the WoW 6.2.4.21742 client folder (Wow.exe + Data\\)\n"\
         "-o set output path (max %d characters)\n"\
         "-e extract only MAP(1)/DBC(2) - standard: both(3)\n"\
         "-f height stored as int (less map size but lost some accuracy) 1 by default\n"\
-        "Example: %s -f 0 -i \"c:\\games\\game\"\n", prg, MAX_PATH_LENGTH - 1, MAX_PATH_LENGTH - 1, prg);
+        "Example: %s -i \"C:\\Games\\World of Warcraft\"\n", prg, MAX_PATH_LENGTH - 1, prg);
     exit(1);
 }
 
@@ -391,7 +402,7 @@ void ReadLiquidTypeTableDBC()
 
 // Map file format data
 static char const* MAP_MAGIC         = "MAPS";
-static char const* MAP_VERSION_MAGIC = "v1.8";
+static char const* MAP_VERSION_MAGIC = "v1.9";
 static char const* MAP_AREA_MAGIC    = "AREA";
 static char const* MAP_HEIGHT_MAGIC  = "MHGT";
 static char const* MAP_LIQUID_MAGIC  = "MLIQ";
@@ -1199,21 +1210,29 @@ void ExtractDBFilesClient(int l)
 
 bool OpenCascStorage()
 {
-    try
+    std::string base = input_path;
+    while (!base.empty() && (base.back() == '/' || base.back() == '\\'))
+        base.pop_back();
+
+    std::string const candidates[] =
     {
-        if (!CascOpenStorage((std::string(input_path) + "/Data").c_str(), 0, &CascStorage))
+        base + "/Data",
+        base,
+        std::string("./Data")
+    };
+
+    for (std::string const& path : candidates)
+    {
+        if (CascOpenStorage(path.c_str(), 0, &CascStorage))
         {
-            printf("error opening casc storage '%s': %s\n", (std::string(input_path) + "/Data").c_str(), HumanReadableCASCError(GetLastError()));
-            return false;
+            printf("opened casc storage '%s'\n", path.c_str());
+            return true;
         }
-        printf("opened casc storage '%s'\n", (std::string(input_path) + "/Data").c_str());
-        return true;
+        printf("error opening casc storage '%s': %s\n", path.c_str(), HumanReadableCASCError(GetLastError()));
     }
-    catch (...)
-    {
-        printf("error opening casc storage\n");
-        return false;
-    }
+
+    printf("Use -i <WoW 6.2.4.21742 folder> (the folder that contains Wow.exe and Data\\).\n");
+    return false;
 }
 
 int main(int argc, char * arg[])
@@ -1244,6 +1263,8 @@ int main(int argc, char * arg[])
                 continue;
 
             printf("Detected client build: %u\n\n", build);
+            if (build != 21742)
+                printf("Warning: this core targets client 6.2.4.21742. Maps from build %u may not match.\n\n", build);
             break;
         }
 
@@ -1253,6 +1274,8 @@ int main(int argc, char * arg[])
             continue;
 
         printf("Detected client build %u for locale %s\n\n", tempBuild, Locales[i]);
+        if (tempBuild != 21742)
+            printf("Warning: this core targets client 6.2.4.21742. Data from build %u may not match.\n\n", tempBuild);
         ExtractDBFilesClient(i);
 
         if (FirstLocale < 0)

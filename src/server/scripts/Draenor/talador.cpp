@@ -49,8 +49,8 @@ class npc_talador_warlock_soulstealer : public CreatureScript
                 if (l_PlayerKiller)
                 {
                     std::list<Unit*> l_NearCreatures;
-                    JadeCore::AllCreaturesOfEntryInRange l_UCheck(me, DraeneiSpirit, 15.0f);
-                    JadeCore::UnitListSearcher<JadeCore::AllCreaturesOfEntryInRange> l_Searcher(me, l_NearCreatures, l_UCheck);
+                    Trinity::AllCreaturesOfEntryInRange l_UCheck(me, DraeneiSpirit, 15.0f);
+                    Trinity::UnitListSearcher<Trinity::AllCreaturesOfEntryInRange> l_Searcher(me, l_NearCreatures, l_UCheck);
                     me->VisitNearbyObject(15.0f, l_Searcher);
 
                     for (Unit* l_Unit : l_NearCreatures)
@@ -58,7 +58,7 @@ class npc_talador_warlock_soulstealer : public CreatureScript
                         if (l_Unit->HasAura(TormentedSoul))
                         {
                             l_Unit->RemoveAura(TormentedSoul);
-                            l_Unit->GetMotionMaster()->MoveFleeing(me, 5 * TimeConstants::IN_MILLISECONDS);
+                            l_Unit->GetMotionMaster()->MoveFleeing(me, false, 5 * TimeConstants::IN_MILLISECONDS);
                             l_Unit->ToCreature()->DespawnOrUnsummon(5 * TimeConstants::IN_MILLISECONDS);
                             l_PlayerKiller->KilledMonsterCredit(KillCredit_RescueDraeneiSpirits);
                         }
@@ -278,45 +278,47 @@ public:
 					std::list<Player*> PlayersInRange;
 					me->GetPlayerListInGrid(PlayersInRange, 10.0f);
 					for (Player* p_Player : PlayersInRange)
-
-					if (p_Player->GetQuestStatus(TaladorLegendaryQuests::CallOfTheArchmage) == QUEST_STATUS_COMPLETE)
 					{
-						DoAction(eActions::PreFinishQuest1);
+						if (p_Player->GetQuestStatus(TaladorLegendaryQuests::CallOfTheArchmage) == QUEST_STATUS_COMPLETE)
+							DoAction(eActions::PreFinishQuest1);
 					}
+					break;
 				}
 				case eEvents::EventCheckPlayer2:
 				{
 					std::list<Player*> PlayersInRange;
 					me->GetPlayerListInGrid(PlayersInRange, 5.0f);
 					for (Player* p_Player : PlayersInRange)
-
-					if (p_Player->GetQuestStatus(TaladorLegendaryQuests::SpiresOfTheBetrayer) == QUEST_STATUS_INCOMPLETE)
 					{
-						DoAction(eActions::StartQuest1);
+						if (p_Player->GetQuestStatus(TaladorLegendaryQuests::SpiresOfTheBetrayer) == QUEST_STATUS_INCOMPLETE)
+							DoAction(eActions::StartQuest1);
 					}
+					break;
 				}
 				case eEvents::EventCheckPlayer3:
 				{
 					std::list<Player*> PlayersInRange;
 					me->GetPlayerListInGrid(PlayersInRange, 5.0f);
 					for (Player* p_Player : PlayersInRange)
-
+					{
 						if (p_Player->GetQuestStatus(TaladorLegendaryQuests::OrbOfDominion) == QUEST_STATUS_INCOMPLETE)
-						{
 							DoAction(eActions::StartQuest2);
-						}
+					}
+					break;
 				}
 				case eEvents::EventCheckPlayer4:
 				{
 					std::list<Player*> PlayersInRange;
 					me->GetPlayerListInGrid(PlayersInRange, 10.0f);
 					for (Player* p_Player : PlayersInRange)
-
+					{
 						if (p_Player->GetQuestStatus(TaladorLegendaryQuests::OrbOfDominion) == QUEST_STATUS_COMPLETE)
-						{
 							DoAction(eActions::PreFinishQuest2);
-						}
+					}
+					break;
 				}
+				default:
+					break;
 			}
 		}
 	};

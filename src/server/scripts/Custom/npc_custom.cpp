@@ -1339,7 +1339,7 @@ public:
 
 		pet->GetCharmInfo()->SetPetNumber(sObjectMgr->GeneratePetNumber(), true);
 		if (!pet->InitStatsForLevel(player->getLevel()))
-			sLog->outInfo(LOG_FILTER_PETS, "Pet Create fail: no init stats for entry %u", entry);
+			TC_LOG_INFO("entities.pet", "Pet Create fail: no init stats for entry %u", entry);
 
 		pet->UpdateAllStats();
 
@@ -1784,7 +1784,7 @@ public:
 							{
 								AddBloodMoneyEntry(target->GetGUID(), player->GetGUID(), action);
 								char msg[60];
-								sprintf(msg, "%n has requested a Blood Money duel with you!", player->GetName());
+								sprintf(msg, "%s has requested a Blood Money duel with you!", player->GetName());
 								creature->MonsterWhisper(msg, target->GetGUID(), true);
 							}
 							else

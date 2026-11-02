@@ -59,6 +59,7 @@ struct LFGListEntry
     };
 
     LFGListEntry()
+        : m_RequiredItemLevel(0.0f), m_AutoAcceptInvites(false), m_ActivityEntry(nullptr), m_Group(nullptr)
     {
         m_CreationTime = uint32(time(nullptr));
         m_Timeout = m_CreationTime + LFG_LIST_GROUP_TIMEOUT;
@@ -97,6 +98,11 @@ struct LFGListEntry
 class LFGListMgr
 {
 public:
+    static LFGListMgr* instance()
+    {
+        static LFGListMgr* instance = new LFGListMgr();
+        return instance;
+    }
 
     enum LFGListActivityCategory
     {
@@ -173,4 +179,4 @@ private:
     uint32 m_ApplicantIDCounter;
 };
 
-#define sLFGListMgr ACE_Singleton<LFGListMgr, ACE_Null_Mutex>::instance()
+#define sLFGListMgr LFGListMgr::instance()

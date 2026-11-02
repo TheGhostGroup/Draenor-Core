@@ -55,8 +55,8 @@ class spell_dru_yseras_gift: public SpellScriptLoader
                 {
                     float l_Radius = 30.0f;
                     std::list<Unit*> l_TargetList;
-                    JadeCore::AnyFriendlyUnitInObjectRangeCheck u_check(l_Caster, l_Caster, l_Radius);
-                    JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> searcher(l_Caster, l_TargetList, u_check);
+                    Trinity::AnyFriendlyUnitInObjectRangeCheck u_check(l_Caster, l_Caster, l_Radius);
+                    Trinity::UnitListSearcher<Trinity::AnyFriendlyUnitInObjectRangeCheck> searcher(l_Caster, l_TargetList, u_check);
                     l_Caster->VisitNearbyObject(l_Radius, searcher);
 
                     l_TargetList.remove_if([l_Caster](Unit* p_Unit) -> bool
@@ -75,7 +75,7 @@ class spell_dru_yseras_gift: public SpellScriptLoader
 
                     if (l_TargetList.size() > 1)
                     {
-                        l_TargetList.sort(JadeCore::HealthPctOrderPred());
+                        l_TargetList.sort(Trinity::HealthPctOrderPred());
                         l_TargetList.resize(1);
                     }
                     if (l_TargetList.size() < 1)
@@ -128,7 +128,7 @@ class spell_dru_yseras_gift_ally_proc : public SpellScriptLoader
 
                 if (p_Targets.size() > 1)
                 {
-                    p_Targets.sort(JadeCore::HealthPctOrderPred());
+                    p_Targets.sort(Trinity::HealthPctOrderPred());
                     p_Targets.resize(1);
                 }
             }
@@ -834,7 +834,7 @@ class spell_dru_natures_vigil_proc : public SpellScriptLoader
             {
                 if (p_Targets.size() > 1)
                 {
-                    p_Targets.sort(JadeCore::HealthPctOrderPred());
+                    p_Targets.sort(Trinity::HealthPctOrderPred());
                     p_Targets.resize(1);
                 }
             }
@@ -1266,7 +1266,7 @@ class spell_dru_wild_growth : public SpellScriptLoader
 
                 if (p_Targets.size() > l_MaxTargets)
                 {
-                    p_Targets.sort(JadeCore::HealthPctOrderPred());
+                    p_Targets.sort(Trinity::HealthPctOrderPred());
                     p_Targets.resize(l_MaxTargets);
                 }
             }
@@ -2283,7 +2283,7 @@ class spell_dru_wild_mushroom_heal_proc : public SpellScriptLoader
 
                 if (p_Targets.size() > 1)
                 {
-                    p_Targets.sort(JadeCore::HealthPctOrderPred());
+                    p_Targets.sort(Trinity::HealthPctOrderPred());
                     p_Targets.resize(l_MaxTargets);
                 }
             }
@@ -2615,7 +2615,7 @@ class spell_dru_eclipse : public PlayerScript
             l_EclipseData.m_EclipseCycleActive = true;
             l_EclipseData.m_EclipseFinishingCount = -1;
 
-            ACE_OS::gettimeofday().msec(l_EclipseData.m_LastEclipseCheck);
+            l_EclipseData.m_LastEclipseCheck = getMSTime();
        }
 
         /// Override
@@ -2647,7 +2647,7 @@ class spell_dru_eclipse : public PlayerScript
                 return;
 
             uint64 l_ActualTime = 0;
-            ACE_OS::gettimeofday().msec(l_ActualTime);
+            l_ActualTime = getMSTime();
 
             uint32 l_PowerIndex = p_Player->GetPowerIndex(Powers::POWER_ECLIPSE, p_Player->getClass());
             if (l_PowerIndex == MAX_POWERS)
@@ -3031,9 +3031,10 @@ class spell_dru_moonfire : public SpellScriptLoader
 
 				if (l_Caster->HasAura(eSpells::T18_Balance_2P))
 				{
-					if (roll_chance_i)
+					if (SpellInfo const* l_BonusSpell = sSpellMgr->GetSpellInfo(eSpells::T18_Balance_2P))
 					{
-						l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
+						if (roll_chance_i(l_BonusSpell->Effects[EFFECT_0].BasePoints))
+							l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
 					}
 				}
 			}
@@ -3145,9 +3146,10 @@ class spell_dru_sunfire : public SpellScriptLoader
 
 				if (l_Caster->HasAura(eSpells::T18_Balance_2P))
 				{
-					if (roll_chance_i)
+					if (SpellInfo const* l_BonusSpell = sSpellMgr->GetSpellInfo(eSpells::T18_Balance_2P))
 					{
-						l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
+						if (roll_chance_i(l_BonusSpell->Effects[EFFECT_0].BasePoints))
+							l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
 					}
 				}
 			}
@@ -3244,9 +3246,10 @@ class spell_dru_moonfire_sunfire_damage : public SpellScriptLoader
 
 				if (l_Caster->HasAura(eSpells::T18_Balance_2P))
 				{
-					if (roll_chance_i)
+					if (SpellInfo const* l_BonusSpell = sSpellMgr->GetSpellInfo(eSpells::T18_Balance_2P))
 					{
-						l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
+						if (roll_chance_i(l_BonusSpell->Effects[EFFECT_0].BasePoints))
+							l_Caster->CastSpell(l_Caster, eSpells::FeyMoonwing, true);
 					}
 				}
 			}
@@ -3282,7 +3285,7 @@ class spell_dru_dream_of_cenarius_balance : public SpellScriptLoader
             {
                 if (p_Targets.size() > 1)
                 {
-                    p_Targets.sort(JadeCore::HealthPctOrderPred());
+                    p_Targets.sort(Trinity::HealthPctOrderPred());
                     p_Targets.resize(1);
                 }
             }
@@ -3443,7 +3446,7 @@ class spell_dru_t10_restoration_4p_bonus: public SpellScriptLoader
                         return;
                     }
 
-                    Unit* target = JadeCore::Containers::SelectRandomContainerElement(tempTargets);
+                    Unit* target = Trinity::Containers::SelectRandomContainerElement(tempTargets);
                     targets.clear();
                     targets.push_back(target);
                 }

@@ -33,7 +33,7 @@
 #include "TemporarySummon.h"
 #include "Vehicle.h"
 #include "WorldSession.h"
-#include "Gilneas.h"
+#include "gilneas.h"
 
 enum eDuskHaven
 {
@@ -808,7 +808,7 @@ public:
         void CheckTargets(std::list<WorldObject*>& targets)
         {
             targets.remove_if(IsNotEntryButPlayer(GetCaster(), NPC_GENERIC_TRIGGER_LAB_AOI));
-            WorldObject* target = JadeCore::Containers::SelectRandomContainerElement(targets);
+            WorldObject* target = Trinity::Containers::SelectRandomContainerElement(targets);
             if (!target)
                 this->FinishCast(SPELL_CAST_OK);
             else
@@ -3325,7 +3325,7 @@ public:
                     case EVENT_TALK_PART_00:
                     {
                         if (Player* player = Unit::GetPlayer(*me, m_playerGUID))
-                            me->GetMotionMaster()->MoveFleeing(player, 7000);
+                            me->GetMotionMaster()->MoveFleeing(player, false, 7000);
 
                         m_events.ScheduleEvent(EVENT_TALK_PART_01, 6000);
                         break;

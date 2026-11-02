@@ -8,6 +8,7 @@
 
 #ifndef CROSS
 #include "GarrisonMgr.hpp"
+#include "GarrisonPackets.h"
 #include "../../../scripts/Draenor/Garrison/GarrisonScriptData.hpp"
 #include "Player.h"
 #include "DatabaseEnv.h"
@@ -52,7 +53,7 @@ namespace MS {
 
 			case FactionIndex::Max:
 			default:
-				ASSERT(false);
+				ABORT();
 				break;
 
 			}
@@ -91,7 +92,7 @@ namespace MS {
 			l_Stmt->setUInt32(l_Index++, m_NumFollowerActivationRegenTimestamp);
 			l_Stmt->setUInt32(l_Index++, m_CacheLastUsage);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			Init();
 
@@ -132,7 +133,7 @@ namespace MS {
 
 			case FactionIndex::Max:
 			default:
-				ASSERT(false);
+				ABORT();
 				break;
 
 			}
@@ -233,7 +234,7 @@ namespace MS {
 						{
 							PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_MISSION);
 							l_Stmt->setUInt32(0, l_Mission.DatabaseID);
-							CharacterDatabase.AsyncQuery(l_Stmt);
+							CharacterDatabase.AsyncQueryFuture(l_Stmt);
 						}
 
 					} while (p_MissionsResult->NextRow());
@@ -335,7 +336,7 @@ namespace MS {
 						PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_MISSION);
 						l_Stmt->setUInt32(0, l_MissionBD_ID);
 
-						CharacterDatabase.AsyncQuery(l_Stmt);
+						CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 						m_Missions.erase(l_It);
 					}
@@ -382,7 +383,7 @@ namespace MS {
 						PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_MISSION);
 						l_Stmt->setUInt32(0, l_MissionBD_ID);
 
-						CharacterDatabase.AsyncQuery(l_Stmt);
+						CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 						m_Missions.erase(l_It);
 					}
@@ -488,7 +489,7 @@ namespace MS {
 
 				case FactionIndex::Max:
 				default:
-					ASSERT(false);
+					ABORT();
 					break;
 
 				}
@@ -1153,7 +1154,7 @@ namespace MS {
 			l_Stmt->setUInt32(l_Index++, l_Mission.StartTime);
 			l_Stmt->setUInt32(l_Index++, l_Mission.State);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_Missions.push_back(l_Mission);
 
@@ -1581,12 +1582,13 @@ namespace MS {
 					}
 					else if (HasActiveBuilding(Building::ID::SalvageYard_SalvageYard_Level2))
 					{
-						if (roll_chance_i(30))
+						/// L2 increases salvage chance over L1 (was incorrectly 30% < L1's 50%)
+						if (roll_chance_i(75))
 							m_PendingMissionReward.RewardItems.push_back(std::make_pair(Items::ItemCrateOfSalvage, 1));
 					}
 					else if (HasActiveBuilding(Building::ID::SalvageYard_SalvageYard_Level3))
 					{
-						if (roll_chance_i(50))
+						if (roll_chance_i(90))
 							m_PendingMissionReward.RewardItems.push_back(std::make_pair(Items::ItemCrateOfSalvage, 1));
 					}
 					break;
@@ -2491,7 +2493,7 @@ namespace MS {
 			l_Stmt->setUInt32(l_Index++, l_Follower.Flags);
 			l_Stmt->setString(l_Index++, l_Follower.ShipName);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_Followers.push_back(l_Follower);
 
@@ -2553,7 +2555,7 @@ namespace MS {
 			l_Stmt->setUInt32(l_Index++, p_Follower.Flags);
 			l_Stmt->setString(l_Index++, p_Follower.ShipName);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_Followers.push_back(p_Follower);
 
@@ -2971,9 +2973,9 @@ namespace MS {
 
 			if (!p_Triggered)
 			{
-				WorldPacket l_PlotRemoved(SMSG_GARRISON_PLOT_REMOVED, 4);
-				l_PlotRemoved << uint32(p_PlotInstanceID);
-				m_Owner->SendDirectMessage(&l_PlotRemoved);
+				WorldPackets::Garrison::GarrisonPlotRemoved plotRemoved;
+				plotRemoved.GarrPlotInstanceID = p_PlotInstanceID;
+				m_Owner->SendDirectMessage(const_cast<WorldPacket*>(plotRemoved.Write()));
 			}
 
 			uint32 l_BuildingTime = l_BuildingEntry->BuildDuration;
@@ -3020,7 +3022,7 @@ namespace MS {
 			l_Stmt->setBool(l_Index++, l_Building.Active);
 			l_Stmt->setString(l_Index++, l_Building.GatheringData);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_Buildings.push_back(l_Building);
 
@@ -3216,7 +3218,7 @@ namespace MS {
 
 			PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_BUILDING);
 			l_Stmt->setUInt32(0, GetBuilding(p_PlotInstanceID).DatabaseID);
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			for (std::vector<GarrisonBuilding>::iterator l_It = m_Buildings.begin(); l_It != m_Buildings.end(); ++l_It)
 			{
@@ -3241,22 +3243,19 @@ namespace MS {
 
 			GarrisonPlotInstanceInfoLocation l_PlotLocation = GetPlot(p_PlotInstanceID);
 
-			WorldPacket l_PlotPlacedPacket(SMSG_GARRISON_PLOT_PLACED, 24);
-			l_PlotPlacedPacket << uint32(p_PlotInstanceID);
-			l_PlotPlacedPacket << float(l_PlotLocation.X);
-			l_PlotPlacedPacket << float(l_PlotLocation.Y);
-			l_PlotPlacedPacket << float(l_PlotLocation.Z);
-			l_PlotPlacedPacket << float(l_PlotLocation.O);
-			l_PlotPlacedPacket << uint32(GetPlotType(p_PlotInstanceID));
+			WorldPackets::Garrison::GarrisonPlotPlaced plotPlaced;
+			WorldPackets::Garrison::GarrisonPlotInfo plotInfo;
+			plotInfo.GarrPlotInstanceID = p_PlotInstanceID;
+			plotInfo.PlotPos.Relocate(l_PlotLocation.X, l_PlotLocation.Y, l_PlotLocation.Z, l_PlotLocation.O);
+			plotInfo.PlotType = GetPlotType(p_PlotInstanceID);
+			plotPlaced.PlotInfo = &plotInfo;
+			m_Owner->SendDirectMessage(const_cast<WorldPacket*>(plotPlaced.Write()));
 
-			m_Owner->SendDirectMessage(&l_PlotPlacedPacket);
-
-			WorldPacket l_BuildingRemovedPacket(SMSG_GARRISON_BUILDING_REMOVED, 12);
-			l_BuildingRemovedPacket << uint32(PurchaseBuildingResults::Ok);
-			l_BuildingRemovedPacket << uint32(p_PlotInstanceID);
-			l_BuildingRemovedPacket << uint32(l_BuildingID);
-
-			m_Owner->SendDirectMessage(&l_BuildingRemovedPacket);
+			WorldPackets::Garrison::GarrisonBuildingRemoved buildingRemoved;
+			buildingRemoved.Result = PurchaseBuildingResults::Ok;
+			buildingRemoved.GarrPlotInstanceID = p_PlotInstanceID;
+			buildingRemoved.GarrBuildingID = l_BuildingID;
+			m_Owner->SendDirectMessage(const_cast<WorldPacket*>(buildingRemoved.Write()));
 		}
 
 		/// Has active building
@@ -3414,7 +3413,7 @@ namespace MS {
 			l_Stmt->setUInt32(l_Index++, l_WorkOrder.CreationTime);
 			l_Stmt->setUInt32(l_Index++, l_WorkOrder.CompleteTime);
 
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_WorkOrders.push_back(l_WorkOrder);
 
@@ -3426,7 +3425,7 @@ namespace MS {
 		{
 			PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_WORKORDER);
 			l_Stmt->setUInt32(0, p_DBID);
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			for (std::vector<GarrisonWorkOrder>::iterator l_It = m_WorkOrders.begin(); l_It != m_WorkOrders.end(); ++l_It)
 			{
@@ -3690,11 +3689,10 @@ namespace MS {
 				l_ResultCode = LearnBluePrintResults::Known;
 			}
 
-			WorldPacket l_Result(SMSG_GARRISON_LEARN_BLUEPRINT_RESULT, 8);
-			l_Result << uint32(l_ResultCode);
-			l_Result << uint32(p_BuildingRecID);
-
-			m_Owner->SendDirectMessage(&l_Result);
+			WorldPackets::Garrison::GarrisonLearnBlueprintResult learnResult;
+			learnResult.Result = l_ResultCode;
+			learnResult.BuildingID = p_BuildingRecID;
+			m_Owner->SendDirectMessage(const_cast<WorldPacket*>(learnResult.Write()));
 
 			return true;
 		}
@@ -3770,7 +3768,7 @@ namespace MS {
 
 			if (l_SiteEntry == nullptr)
 			{
-				sLog->outAshran("Garrison::InitDataForLevel() not data found");
+				TC_LOG_ERROR("server.worldserver", "Garrison::InitDataForLevel() not data found");
 				assert(false && "Garrison::InitDataForLevel() not data found");
 				return;
 			}
@@ -4479,7 +4477,7 @@ namespace MS {
 						/// If player has Tavern lvl 3, he'll have 50% chance to get a treasure hunter type mission
 						if (l_Entry->MissionType == MissionType::Treasure)
 						{
-							if (!GetBuildingLevel(GetBuildingWithType(Building::Type::Inn)) == 3)
+							if (GetBuildingLevel(GetBuildingWithType(Building::Type::Inn)) != 3)
 								continue;
 							else if (urand(0, 1))
 								continue;
@@ -4795,7 +4793,7 @@ namespace MS {
 
 			case FactionIndex::Max:
 			default:
-				ASSERT(false);
+				ABORT();
 				break;
 
 			}
@@ -4952,7 +4950,7 @@ namespace MS {
 
 			PreparedStatement* l_Stmt = CharacterDatabase.GetPreparedStatement(CHAR_DEL_GARRISON_FOLLOWER);
 			l_Stmt->setUInt32(0, p_DatabaseID);
-			CharacterDatabase.AsyncQuery(l_Stmt);
+			CharacterDatabase.AsyncQueryFuture(l_Stmt);
 
 			m_Followers.erase(l_Itr);
 
@@ -5223,7 +5221,7 @@ namespace MS {
 
 					if (!l_NewAbility)
 					{
-						sLog->outAshran("Can't find random ability for follower ID %u", p_Follower.FollowerID);
+						TC_LOG_ERROR("server.worldserver", "Can't find random ability for follower ID %u", p_Follower.FollowerID);
 						break;
 					}
 

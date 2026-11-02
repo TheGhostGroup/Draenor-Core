@@ -1005,9 +1005,12 @@ namespace MS {
 									{
 									case GOSSIP_ACTION_INFO_DEF + 1:
 									{
-										/// Test for removing already selected option
-
-										uint32 l_Type = reinterpret_cast<GatheringBuildingMaster<&g_HordeHerbGardenFlowerPlot, &g_AllianceTreeFruitsPosition>*>(l_GarrisonAI)->GetGatheringMiscData();
+										/// Naron (85344) Alliance / Tarnon (81981) Horde — use matching GatheringBuildingMaster specialization
+										uint32 l_Type = 0;
+										if (l_Creature->GetEntry() == 85344)
+											l_Type = reinterpret_cast<GatheringBuildingMaster<&g_AllyHerbGardenFlowerPlot, &g_AllianceTreeFruitsPosition>*>(l_GarrisonAI)->GetGatheringMiscData();
+										else
+											l_Type = reinterpret_cast<GatheringBuildingMaster<&g_HordeHerbGardenFlowerPlot, &g_HordeTreeFruitsPosition>*>(l_GarrisonAI)->GetGatheringMiscData();
 
 										p_Player->ADD_GOSSIP_ITEM_DB(MenuID::DefaultMenuGreetings, GossipOption::HerbRandom, GOSSIP_SENDER_MAIN, GOSSIP_ACTION_INFO_DEF + 8);
 
@@ -1182,8 +1185,8 @@ namespace MS {
 				float l_CheckRadius = l_AuraRadius + 5.0f;
 				std::list<Unit*> l_TargetList;
 
-				JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, l_CheckRadius);
-				JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+				Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, l_CheckRadius);
+				Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 
 				for (Unit* l_Unit : l_TargetList)
 				{
@@ -1246,8 +1249,8 @@ namespace MS {
 				float l_CheckRadius = l_AuraRadius + 5.0f;
 				std::list<Unit*> l_TargetList;
 
-				JadeCore::AnyFriendlyUnitInObjectRangeCheck l_Check(me, me, l_CheckRadius);
-				JadeCore::UnitListSearcher<JadeCore::AnyFriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+				Trinity::AnyFriendlyUnitInObjectRangeCheck l_Check(me, me, l_CheckRadius);
+				Trinity::UnitListSearcher<Trinity::AnyFriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 
 				for (Unit* l_Unit : l_TargetList)
 				{
@@ -1768,6 +1771,9 @@ void AddSC_Garrison_NPC()
 
 		/// Fishing Hut
 		new MS::Garrison::npc_MakJin_Garr;
+
+		/// Gladiator's Sanctum
+		new MS::Garrison::npc_RazaKul_Garr;
 
 		/// Goblin Workshop
 		new MS::Garrison::npc_Vee_Garrison;

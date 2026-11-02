@@ -1073,7 +1073,7 @@ void AddSC_WanderingIsland_West();
 void AddSC_WanderingIsland_South();
 
 /// Draenor
-//void AddSC_tanaan_jungle();
+void AddSC_tanaan_jungle();
 void AddSC_spires_of_arak();
 void AddSC_frostfire_ridge();
 void AddSC_draenor_shadowmoon_valley();
@@ -1202,6 +1202,9 @@ void AddSC_boss_witherbark();
 void AddSC_boss_xeritac();
 void AddSC_boss_archmage_sol();
 void AddSC_boss_yalnu();
+
+// Events
+void AddSC_event_childrens_week();
 
 /// Battlegrounds
 void AddSC_BattlegroundAVcripts();
@@ -2144,7 +2147,7 @@ void AddPandarieScripts()
 void AddDraenorScripts()
 {
 #ifdef SCRIPTS
-	//AddSC_tanaan_jungle();
+	AddSC_tanaan_jungle();
     AddSC_spires_of_arak();
     AddSC_frostfire_ridge();
     AddSC_draenor_shadowmoon_valley();
@@ -2281,6 +2284,13 @@ void AddDraenorScripts()
     /// Draenor Scenario
     AddSC_instance_scenario_fate_of_karabor();
     AddSC_instance_scenario_black_temple();
+#endif
+}
+
+void AddEventScripts()
+{
+#ifdef SCRIPTS
+    AddSC_event_childrens_week();
 #endif
 }
 

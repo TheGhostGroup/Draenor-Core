@@ -27,7 +27,8 @@ namespace MS { namespace Garrison { namespace Sites
         PhaseMagePortalNagrand          = 0x00000080,
         PhaseMagePortalShadowmoon       = 0x00000100,
         PhaseMagePortalGorgrond         = 0x00000200,
-        PhaseLostInTransitionQuest      = 0x00000400
+        /// Match Horde L1 / Alliance L1-L2 so upgrade mid-quest keeps the same phase bit
+        PhaseLostInTransitionQuest      = 0x00008000
     };
 
     /// Constructor
@@ -206,12 +207,18 @@ namespace MS { namespace Garrison { namespace Sites
     /// Can upgrade the garrison
     /// @p_Owner                : Garrison owner
     /// @p_CurrentGarrisonLevel : Current garrison level
-    bool InstanceScript_GarrisonHordeLevel2::CanUpgrade(Player* /*p_Owner*/, uint32 p_CurrentGarrisonLevel)
+    bool InstanceScript_GarrisonHordeLevel2::CanUpgrade(Player* p_Owner, uint32 p_CurrentGarrisonLevel)
     {
         if (p_CurrentGarrisonLevel != 2)
             return false;
+		
+        if (p_Owner->getLevel() != 100)
+            return false;
 
-        return false;
+        if (!p_Owner->HasQuest(Quests::Horde_MyVeryOwnFortress))
+            return false;
+
+        return true;
     }
 
     /// On upgrade the garrison
@@ -225,6 +232,7 @@ namespace MS { namespace Garrison { namespace Sites
 
         p_Owner->AddMovieDelayedTeleport(l_Entry->MovieID, l_Entry->MapID, 5622.5063f, 4465.5161f, 130.1637f, 0.0f);
         p_Owner->SendMovieStart(l_Entry->MovieID);
+		p_Owner->CompleteQuest(Quests::Horde_MyVeryOwnFortress);
     }
     //////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////
@@ -298,7 +306,7 @@ namespace MS { namespace Garrison { namespace Sites
                     case Building::ID::LunarfallExcavation_FrostwallMines_Level2:
                     case Building::ID::LunarfallExcavation_FrostwallMines_Level3:
                     {
-                        std::vector<uint64> l_CreatureGuids = l_GarrisonMgr->GetBuildingCreaturesByBuildingType(Building::Type::Inn);
+                        std::vector<uint64> l_CreatureGuids = l_GarrisonMgr->GetBuildingCreaturesByBuildingType(Building::Type::Mine);
 
                         for (std::vector<uint64>::iterator l_Itr = l_CreatureGuids.begin(); l_Itr != l_CreatureGuids.end(); l_Itr++)
                         {

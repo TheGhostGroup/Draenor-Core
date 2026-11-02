@@ -81,6 +81,12 @@ public:
 		MannorothGazeCast = 181597, // Cast and debuff
 		MannorothGazeDmg = 181617,
 
+		// Shadowforce
+		ShadowForce = 181799,
+
+		// Inferno — summons Dread Infernal at impact (https://www.wowhead.com/spell=181180)
+		Inferno = 181180,
+
 		// Empowered Glaive Combo
 		EmpoweredGlaiveCombo = 187347,
 		EmpoweredGlaiveThrustCast = 185831,
@@ -89,7 +95,13 @@ public:
 		EmpoweredMassiveBlast = 185826,
 		EmpoweredMassiveBlastWaveVisual = 185821, // Three of these, areatriggers
 		EmpoweredMassiveBlastWave = 189424, // Dmg and knockback
-		EmpoweredMassiveBlastStun = 191581
+		EmpoweredMassiveBlastStun = 191581,
+
+		// Empowered variants
+		EmpoweredFelHellstorm = 181948,
+		EmpoweredFelseeker = 182336,
+		EmpoweredShadowForce = 182084,
+		EmpoweredMannorothGaze = 182006
 	};
 
 	enum eEvents
@@ -168,7 +180,7 @@ public:
 		bool m_Phase2;
 		bool m_Phase3;
 		bool m_Phase4;
-		bool m_PhaseID;
+		uint8 m_PhaseID;
 
 		void Reset() override
 		{
@@ -764,8 +776,8 @@ public:
 					{
 						std::list<Unit*> l_TargetList;
 
-						JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
-						JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+						Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
+						Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 						me->VisitNearbyObject(150.0f, l_Searcher);
 
 						std::set<uint64> l_Targets;
@@ -777,11 +789,77 @@ public:
 							me->AddAura(eSpells::MannorothGazeCast, l_Iter);
 						}
 					});
-				break;
+					break;
 				}
-
-				// Phase 3
-
+				case eEvents::EventFelHellstorm:
+				{
+					me->CastSpell(me, eSpells::FelHellstormCast, false);
+					m_Events.ScheduleEvent(eEvents::EventFelHellstorm, 30 * TimeConstants::IN_MILLISECONDS, 0, m_PhaseID);
+					break;
+				}
+				case eEvents::EventFelseeker:
+				{
+					if (Unit* l_Target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
+					{
+						uint64 l_TargetGuid = l_Target->GetGUID();
+						me->CastSpell(l_Target, eSpells::Felseeker, false);
+						me->CastSpell(l_Target, eSpells::Felseeker1, true);
+						AddTimedDelayedOperation(1 * TimeConstants::IN_MILLISECONDS, [this, l_TargetGuid]() -> void
+						{
+							if (Unit* l_Unit = Unit::GetUnit(*me, l_TargetGuid))
+								me->CastSpell(l_Unit, eSpells::Felseeker2, true);
+						});
+						AddTimedDelayedOperation(2 * TimeConstants::IN_MILLISECONDS, [this, l_TargetGuid]() -> void
+						{
+							if (Unit* l_Unit = Unit::GetUnit(*me, l_TargetGuid))
+								me->CastSpell(l_Unit, eSpells::Felseeker3, true);
+						});
+					}
+					m_Events.ScheduleEvent(eEvents::EventFelseeker, 50 * TimeConstants::IN_MILLISECONDS, 0, m_PhaseID);
+					break;
+				}
+				case eEvents::EventShadowForce:
+				{
+					if (Unit* l_Target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
+						me->CastSpell(l_Target, eSpells::ShadowForce, false);
+					m_Events.ScheduleEvent(eEvents::EventShadowForce, 65 * TimeConstants::IN_MILLISECONDS, 0, m_PhaseID);
+					break;
+				}
+				case eEvents::EventInferno:
+				{
+					if (Unit* l_Target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
+					{
+						me->CastSpell(l_Target, eSpells::Inferno, true);
+						me->SummonCreature(eCitadelCreatures::DreadInfernal, *l_Target, TEMPSUMMON_CORPSE_TIMED_DESPAWN, 10000);
+					}
+					m_Events.ScheduleEvent(eEvents::EventInferno, 45 * TimeConstants::IN_MILLISECONDS, 0, m_PhaseID);
+					break;
+				}
+				case eEvents::EventEmpoweredFelHellstorm:
+				{
+					me->CastSpell(me, eSpells::EmpoweredFelHellstorm, false);
+					m_Events.ScheduleEvent(eEvents::EventEmpoweredFelHellstorm, 20 * TimeConstants::IN_MILLISECONDS, 0, ePhases::Empowerment);
+					break;
+				}
+				case eEvents::EventEmpoweredFelseeker:
+				{
+					if (Unit* l_Target = SelectTarget(SELECT_TARGET_RANDOM, 0, 80.0f, true))
+						me->CastSpell(l_Target, eSpells::EmpoweredFelseeker, false);
+					m_Events.ScheduleEvent(eEvents::EventEmpoweredFelseeker, 50 * TimeConstants::IN_MILLISECONDS, 0, ePhases::Empowerment);
+					break;
+				}
+				case eEvents::EventEmpoweredShadowForce:
+				{
+					me->CastSpell(me, eSpells::EmpoweredShadowForce, false);
+					m_Events.ScheduleEvent(eEvents::EventEmpoweredShadowForce, 65 * TimeConstants::IN_MILLISECONDS, 0, ePhases::Empowerment);
+					break;
+				}
+				case eEvents::EventEmpoweredMannorothGaze:
+				{
+					me->CastSpell(me, eSpells::EmpoweredMannorothGaze, false);
+					m_Events.ScheduleEvent(eEvents::EventEmpoweredMannorothGaze, 45 * TimeConstants::IN_MILLISECONDS, 0, ePhases::Empowerment);
+					break;
+				}
 
 				// Phase 4
 				case eEvents::EventEmpoweredGlaiveCombo:
@@ -1787,8 +1865,8 @@ public:
 				{
 					std::list<Unit*> l_TargetList;
 
-					JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
-					JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+					Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
+					Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 					me->VisitNearbyObject(500.0f, l_Searcher);
 
 					std::set<uint64> l_Targets;
@@ -1895,8 +1973,8 @@ public:
 				{
 					std::list<Unit*> l_TargetList;
 
-					JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
-					JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+					Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
+					Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 					me->VisitNearbyObject(500.0f, l_Searcher);
 
 					std::set<uint64> l_Targets;
@@ -1986,8 +2064,8 @@ public:
 			{
 				std::list<Unit*> l_TargetList;
 
-				JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
-				JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
+				Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, 1500.0f);
+				Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_TargetList, l_Check);
 				me->VisitNearbyObject(500.0f, l_Searcher);
 
 				std::set<uint64> l_Targets;
@@ -2139,7 +2217,7 @@ public:
 
 		InstanceScript* m_Instance;
 
-		bool m_PhaseID;
+		uint8 m_PhaseID;
 
 		void Reset() override
 		{
@@ -2456,8 +2534,8 @@ public:
 				/// Find all the enemies in range
 				std::list<Unit*> l_Targets;
 
-				JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, l_MaxRadius);
-				JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_Targets, l_Check);
+				Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(me, me, l_MaxRadius);
+				Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(me, l_Targets, l_Check);
 				me->VisitNearbyObject(l_MaxRadius, l_Searcher);
 
 				for (Unit* l_Target : l_Targets)
@@ -3039,8 +3117,8 @@ public:
 			std::list<Unit*> l_TargetList;
 			float l_Radius = 40.0f;
 
-			JadeCore::AnyUnfriendlyUnitInObjectRangeCheck l_Check(p_AreaTrigger, l_Caster, l_Radius);
-			JadeCore::UnitListSearcher<JadeCore::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(p_AreaTrigger, l_TargetList, l_Check);
+			Trinity::AnyUnfriendlyUnitInObjectRangeCheck l_Check(p_AreaTrigger, l_Caster, l_Radius);
+			Trinity::UnitListSearcher<Trinity::AnyUnfriendlyUnitInObjectRangeCheck> l_Searcher(p_AreaTrigger, l_TargetList, l_Check);
 			p_AreaTrigger->VisitNearbyObject(l_Radius, l_Searcher);
 
 			std::set<uint64> l_Targets;
@@ -3174,6 +3252,8 @@ void AddSC_boss_mannoroth_hfc()
 	new spell_citadel_teleport_mann_to_blackgate();
 
 	new spell_citadel_curse_of_the_legion();
+	new spell_citadel_mannoroth_gaze();
+	new spell_citadel_mannoroth_gaze_damage();
 
 	/// Areatriggers
 	new areatrigger_citadel_mannoroth_blood();

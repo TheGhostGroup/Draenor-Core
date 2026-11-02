@@ -34,14 +34,14 @@ public:
 
 		if (p_NewAreaId == 109)
 		{
-			if (p_Player->GetQuestStatus(26215) == QUEST_STATUS_COMPLETE || QUEST_STATUS_REWARDED)
+			if (p_Player->GetQuestStatus(26215) == QUEST_STATUS_COMPLETE || p_Player->GetQuestStatus(26215) == QUEST_STATUS_REWARDED)
 			{
-				l_PhaseMask == 3; // Lou alive
+				l_PhaseMask = 3; // Lou alive
 			}
 
-			if (p_Player->GetQuestStatus(26232) == QUEST_STATUS_COMPLETE || QUEST_STATUS_REWARDED)
+			if (p_Player->GetQuestStatus(26232) == QUEST_STATUS_COMPLETE || p_Player->GetQuestStatus(26232) == QUEST_STATUS_REWARDED)
 			{
-				l_PhaseMask == 5; // Lou dead
+				l_PhaseMask = 5; // Lou dead
 			}
 
 			p_Player->SetPhaseMask(l_PhaseMask, true);
@@ -54,14 +54,14 @@ public:
 		{
 			uint32 l_PhaseMask = p_Player->GetPhaseMask();
 
-			if (p_Player->GetQuestStatus(26215) == QUEST_STATUS_COMPLETE || QUEST_STATUS_REWARDED)
+			if (p_Player->GetQuestStatus(26215) == QUEST_STATUS_COMPLETE || p_Player->GetQuestStatus(26215) == QUEST_STATUS_REWARDED)
 			{
-				l_PhaseMask == 3; // Lou alive
+				l_PhaseMask = 3; // Lou alive
 			}
 
-			if (p_Player->GetQuestStatus(26232) == QUEST_STATUS_COMPLETE || QUEST_STATUS_REWARDED)
+			if (p_Player->GetQuestStatus(26232) == QUEST_STATUS_COMPLETE || p_Player->GetQuestStatus(26232) == QUEST_STATUS_REWARDED)
 			{
-				l_PhaseMask == 5; // Lou dead
+				l_PhaseMask = 5; // Lou dead
 			}
 
 			p_Player->SetPhaseMask(l_PhaseMask, true);
@@ -812,8 +812,8 @@ public:
 
 								std::list<Player*> players;
 
-								JadeCore::AnyPlayerInObjectRangeCheck checker(me, 25.0f);
-								JadeCore::PlayerListSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
+								Trinity::AnyPlayerInObjectRangeCheck checker(me, 25.0f);
+								Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
 								me->VisitNearbyWorldObject(20.0f, searcher);
 
 								for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
@@ -1895,8 +1895,8 @@ public:
 
 														std::list<Player*> players;
 
-														JadeCore::AnyPlayerInObjectRangeCheck checker(me, 50.0f);
-														JadeCore::PlayerListSearcher<JadeCore::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
+														Trinity::AnyPlayerInObjectRangeCheck checker(me, 50.0f);
+														Trinity::PlayerListSearcher<Trinity::AnyPlayerInObjectRangeCheck> searcher(me, players, checker);
 														me->VisitNearbyWorldObject(50.0f, searcher);
 
 														for (std::list<Player*>::const_iterator itr = players.begin(); itr != players.end(); ++itr)
@@ -2260,7 +2260,7 @@ public:
 			});
 
 			if (targets.size() > 1)
-				JadeCore::Containers::RandomResizeList(targets, 1);
+				Trinity::Containers::RandomResizeList(targets, 1);
 		}
 
 		void Register() override

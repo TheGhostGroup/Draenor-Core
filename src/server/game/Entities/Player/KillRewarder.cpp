@@ -96,7 +96,7 @@ inline void KillRewarder::_InitGroupData()
                         _maxLevel = lvl;
                     // 2.4. _maxNotGrayMember - maximum level of alive group member within reward distance,
                     //      for whom victim is not gray;
-                    uint32 grayLevel = JadeCore::XP::GetGrayLevel(lvl);
+                    uint32 grayLevel = Trinity::XP::GetGrayLevel(lvl);
                     if (_victim->getLevel() > grayLevel && (!_maxNotGrayMember || _maxNotGrayMember->getLevel() < lvl))
                         _maxNotGrayMember = member;
                 }
@@ -116,7 +116,7 @@ inline void KillRewarder::_InitXP(Player* player)
     // * otherwise, not in PvP;
     // * not if killer is on vehicle.
     if (_isBattleGround || (!_isPvP && !_killer->GetVehicle()))
-        _xp = JadeCore::XP::Gain(player, _victim);
+        _xp = Trinity::XP::Gain(player, _victim);
 }
 
 inline void KillRewarder::_RewardHonor(Player* player)
@@ -235,7 +235,7 @@ void KillRewarder::_RewardGroup()
             {
                 // 3.1.2. Alter group rate if group is in raid (not for battlegrounds).
                 const bool isRaid = !_isPvP && sMapStore.LookupEntry(_killer->GetMapId())->IsRaid() && _group->isRaidGroup();
-                _groupRate = JadeCore::XP::xp_in_group_rate(_count, isRaid);
+                _groupRate = Trinity::XP::xp_in_group_rate(_count, isRaid);
             }
             
             // 3.1.3. Reward each group member (even dead or corpse) within reward distance.
@@ -265,8 +265,12 @@ void KillRewarder::Reward()
             // 3.2.2. Reward killer.
             _RewardPlayer(_killer, false);
     }
-    
-    
+
+    // Hack fix Blazing Speed (kept from former Player.cpp KillRewarder duplicate)
+    if (_killer->getClass() == CLASS_MAGE && _killer->HasSpell(108843))
+        if (_killer->isHonorOrXPTarget(_victim))
+            _killer->CastSpell(_killer, 113853, true); // Blazing Speed aurastate
+
     // 5. Credit instance encounter.
     // 6. Update guild achievements.
     if (Creature* victim = _victim->ToCreature())
